@@ -1,49 +1,40 @@
 import json
-
 import requests
 from bs4 import BeautifulSoup
 
+# Setup
 url = "https://www.womansday.com/relationships/dating-marriage/a41055149/best-pickup-lines/"
 response = requests.get(url)
 doc = BeautifulSoup(response.text, "html.parser")
 
-title_container = doc.select_one("div.css-1adm8f3.emt9r7s6 > ul.css-l03nee.emt9r7s4")
-title_tags = title_container.findAll("li", class_="css-32630i emt9r7s3")
+title_tags = doc.select("h2.body-h2.css-19gk28x.emt9r7s1")
+titles = [title_tag.text for title_tag in title_tags]
 
-# store all titles in list
-titles = []
-for title in title_tags:
-    titles.append(title.text)
+# Select all <ul> tags with the matching class that contain <li> items
+pickup_line_container_tags = [
+    ul for ul in doc.select("ul.css-9b1pbo.emevuu60")
+    if ul.select_one('li')
+]
 
-pickup_line_containers = doc.find_all("ul", class_="css-1r2vahp emevuu60")
-# remove ul if there is no li in it
-for pickup_line_container in pickup_line_containers:
-    if pickup_line_container.find("li") is None:
-        pickup_line_containers.remove(pickup_line_container)
+all_li = []
 
-# store all pickup lines in list (2-dimensional list)
-pickup_lines = []
+for pickup_line_container_tag in pickup_line_container_tags:
+    # Select only <li> tags that have the attribute data-node-id
+    li_tags = pickup_line_container_tag.select('ul.css-9b1pbo.emevuu60 > li[data-node-id]')
+    
+    all_pickup_lines_in_ul = [
+        li.text.split('RELATED:')[0].strip()
+        for li in li_tags
+    ]
+    
+    all_li.append(all_pickup_lines_in_ul)
 
-for pickup_line_container in pickup_line_containers:
-    pickup_lines_li = pickup_line_container.find_all("li")
-    temp = []
-    for pickup_line_li in pickup_lines_li:
-        # if content inside li tag contain the word "RELATED:", I considered :
-        # the content after the word "RELATED:" is not pickup line, so I need only the word before this word
-        if "RELATED:" in pickup_line_li.text:
-            temp.append(pickup_line_li.text.split("RELATED:")[0])
-        else:
-            temp.append(pickup_line_li.text)
-    pickup_lines.append(temp)
-
-# store data into json format
 data = {}
-for i in range(len(titles)):
-    data[titles[i]] = pickup_lines[i]
+for i in range(min(len(all_li), len(titles))):
+    data[titles[i]] = all_li[i]
 
-# Write the JSON data to the file
-file_name = 'data.json'
-with open(file_name, 'w', encoding='utf-8') as json_file:
-    json.dump(data, json_file, ensure_ascii=False, indent=4)
+# Save the resulting dictionary to a JSON file
+with open("pickup_lines.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=4, ensure_ascii=False)
 
-print("Data has been saved successfully in file data.json")
+print("write data to pickup_lines.json successfully")
