@@ -67,6 +67,7 @@ class MySpider(scrapy.Spider):
         }
 
         self.data.append(obj)
+        yield obj
 
     def closed(self, reason):
         # When the spider finishes, write all collected data to a JSON file
