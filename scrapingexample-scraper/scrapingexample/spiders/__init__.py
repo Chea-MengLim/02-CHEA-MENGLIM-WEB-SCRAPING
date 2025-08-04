@@ -2,7 +2,3 @@
 #
 # Please refer to the documentation for information on how to create and manage
 # your spiders.
-
-from .scrapySpider import MySpider
-from .test_xpath import QuotesSpider
-from .test_selenium import ReviewsSpider
